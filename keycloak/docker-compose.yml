@@ -4,7 +4,7 @@ volumes:
 
 services:
   postgres-container:
-    image: postgres
+    image: postgres:13.10
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -20,7 +20,7 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--log=true"
-      - "--log.level=DEBUG"
+      - "--log.level=ERROR"
       - "--log.filepath=/var/log/traefik.log"
       - "--accesslog.filepath=/var/log/access.log"
       #- "--entrypoints.websecure.address=:443"
@@ -43,26 +43,21 @@ services:
         #JDBC_PARAMS: "ssl=true"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.keycloak.rule=Host(`localhost`)"
+      - "traefik.http.routers.keycloak.rule=Host(`${HOST}`)"
       - "traefik.http.routers.keycloak.entrypoints=web"
     ports:
       - 8080:8080
     depends_on:
       - postgres-container
     command:
-      [
-        "start-dev",
-        "--debug",
-        "--features=client-policies",
-        "--db",
-        "postgres",
-        "--db-url",
-        "jdbc:postgresql://postgres-container/${POSTGRES_DB}",
-        "--db-username",
-        "${POSTGRES_USER}",
-        "--db-password",
-        "${POSTGRES_PASSWORD}",
-      ]
+      - "start-dev"
+      - "--debug"
+      - "--features=client-policies"
+      - "--db=postgres"
+      - "--db-url=jdbc:postgresql://postgres-container/${POSTGRES_DB}"
+      - "--db-username=${POSTGRES_USER}"
+      - "--db-password=${POSTGRES_PASSWORD}"
+      - "--hostname=${HOST}"
     volumes:
       - ./keycloak-restrict-client-auth.jar:/opt/keycloak/providers/keycloak-restrict-client-auth.jar
       - ./keycloak-restrict-client-auth-20.0.1/src/test/resources/:/tmp/import
